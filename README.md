@@ -16,6 +16,13 @@ A keyboard-driven **Linux terminal Task Manager**, built in C11 for Fedora and U
 - Previous command-line diagnostic and JSON reporting options remain available
 - No external C libraries required; needs `systemctl` for the Services view
 
+<img width="846" height="729" alt="image" src="https://github.com/user-attachments/assets/fe9c43a0-08bd-4c4f-ba4c-ad335bddf609" />
+<img width="846" height="729" alt="image" src="https://github.com/user-attachments/assets/d3507490-ce07-40e1-af23-a90a01d527f4" />
+<img width="841" height="736" alt="image" src="https://github.com/user-attachments/assets/9b68519a-7352-499f-b74f-e966068328af" />
+
+
+
+
 ## Install Fedora
 
 ```bash
