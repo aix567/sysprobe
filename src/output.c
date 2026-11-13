@@ -18,7 +18,7 @@ static void json_string(const char *s) {
 }
 
 void sp_print_text(const SpSnapshot *s, const SpOptions *opts) {
-    printf("SysProbe v2.0 | Linux system diagnostics\n");
+    printf("SysProbe v3.1 | Linux system diagnostics\n");
     printf("Host: %s | OS: %s | Kernel: %s | Arch: %s\n",
            s->nodename, s->sysname, s->release, s->machine);
     printf("CPU usage (sampled): %.1f%%\n", s->cpu_percent);
@@ -52,7 +52,7 @@ void sp_print_text(const SpSnapshot *s, const SpOptions *opts) {
 }
 
 void sp_print_json(const SpSnapshot *s, const SpOptions *opts) {
-    fputs("{\"version\":\"1.0.0\",\"system\":{\"hostname\":", stdout);
+    fputs("{\"version\":\"3.1.0\",\"system\":{\"hostname\":", stdout);
     json_string(s->nodename);
     fputs(",\"os\":", stdout); json_string(s->sysname);
     fputs(",\"kernel\":", stdout); json_string(s->release);

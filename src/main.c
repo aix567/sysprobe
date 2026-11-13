@@ -5,7 +5,7 @@
 #include <string.h>
 
 static void usage(FILE *out) {
-    fputs("SysProbe v2.0 — Linux Task Manager\n"
+    fputs("SysProbe v3.1 — Linux Task Manager\n"
           "Usage: sysprobe [OPTIONS]\n\n"
           "  --tui               Launch live terminal dashboard (interactive TTY)\n"
           "  --json              Output machine-readable JSON\n"
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
     int tui = 0;
     for (int i = 1; i < argc; ++i) {
         if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) { usage(stdout); return 0; }
-        if (!strcmp(argv[i], "--version")) { puts("SysProbe 2.0.0"); return 0; }
+        if (!strcmp(argv[i], "--version")) { puts("SysProbe 3.1.0"); return 0; }
         if (!strcmp(argv[i], "--tui")) { tui = 1; continue; }
         if (!strcmp(argv[i], "--json")) { opts.json = 1; continue; }
         if (!strcmp(argv[i], "--processes")) { opts.processes = 1; continue; }

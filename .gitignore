@@ -3,5 +3,5 @@
 *.swp
 .DS_Store
 
-/sysprobe
-/build/
+__pycache__/
+*.pyc

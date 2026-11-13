@@ -1,111 +1,119 @@
-# SysProbe v2.0 
+# SysProbe v3.1 — Linux Task Manager
 
-A keyboard-driven **Linux terminal Task Manager**, built in C11 for Fedora and Ubuntu. Combines a compact btop-inspired performance dashboard with Windows Task Manager–style tabs for **Processes**, **Services**, and **Performance**.
+A real graphical Linux Task Manager with a dark dashboard inspired by modern desktop monitors. **C11 collector + Python 3/Tkinter frontend**. Built for Fedora and Ubuntu; no proprietary backend or cloud access.
 
-> This is a native terminal application, not a Windows GUI clone. It runs under your ordinary user permissions and never runs `sudo` automatically.
+> The interface is inspired by the provided SysProbe design concept. This is a functioning Tkinter application, not a pixel-identical rendering of the concept image. Metrics are read from the machine where the app runs.
 
 ## Features
 
-- Real-time total CPU utilization, history, RAM, swap, root filesystem usage, and network rates
-- Processes from `/proc`: PID, name, user, sampled per-process CPU %, resident RAM and state
-- Sort by CPU, RAM or PID and search process names
-- **End task** with `SIGTERM` or **force kill** with `SIGKILL` (both require explicit confirmation)
-- Checks PID plus process start time before sending a signal to avoid acting on a reused PID in ordinary cases
-- Browse `systemd` user or system services, filter names, and attempt to start/stop selected services with confirmation
-- Process details, pause, auto-refresh, keyboard help, terminal restoration on exit
-- Previous command-line diagnostic and JSON reporting options remain available
-- No external C libraries required; needs `systemctl` for the Services view
+| Page | What it does |
+|---|---|
+| Processes | Live CPU time-based utilization, resident memory, process state and file descriptor count; PID/name search; sorting; process details; terminate (`SIGTERM`) and force kill (`SIGKILL`) with confirmation |
+| Performance | Live CPU, RAM, swap and root disk utilization with history charts |
+| Services | List system or user systemd services and request start/stop, with confirmation and normal OS permission checks |
+| Storage | Mounted `/dev` devices from `df -hP` |
+| Network | Combined network transfer rate and byte totals since boot; not per-process attribution |
+| Users | Logged-in sessions as reported by `who` |
+| Logs | Last 100 available `journalctl` entries, read only |
+| Terminal | Existing `sysprobe --tui` monitoring interface |
 
-<img width="846" height="729" alt="image" src="https://github.com/user-attachments/assets/fe9c43a0-08bd-4c4f-ba4c-ad335bddf609" />
-<img width="846" height="729" alt="image" src="https://github.com/user-attachments/assets/d3507490-ce07-40e1-af23-a90a01d527f4" />
-<img width="841" height="736" alt="image" src="https://github.com/user-attachments/assets/9b68519a-7352-499f-b74f-e966068328af" />
+Auto-refresh occurs every ~2 seconds. System probing uses `/proc`, filesystem statistics, and standard Linux tools. The C collector is the telemetry backend of the desktop GUI.
 
+## Fedora installation
 
-
-
-## Install Fedora
+Install dependencies:
 
 ```bash
-sudo dnf install -y gcc make python3 git unzip
+sudo dnf install -y gcc make python3 python3-tkinter systemd unzip
+```
+
+Extract the release:
+
+```bash
+cd ~/Downloads
+unzip sysprobe-v3.1-desktop.zip
+cd sysprobe-v3.1
 make
 make test
-./build/sysprobe --tui
+make desktop-check
+./gui/sysprobe_gui.py
 ```
 
-For Ubuntu/Debian: `sudo apt install build-essential python3` then run the same `make` steps.
-
-**Terminal size:** at least 78 x 24 (recommend 110 x 32 or larger). ANSI-capable terminal such as GNOME Console, kitty, Alacritty, or Konsole.
-
-## Keyboard shortcuts
-
-| Key | Tab / action |
-|---|---|
-| `1` / `2` / `3` | Processes / Services / Performance |
-| `j` / `k`, up/down | Navigate list |
-| `/` | Filter by process or service name (`Enter` accepts) |
-| `s` | Cycle process sort: live CPU%, RAM, PID |
-| `d` | Process details popup |
-| `t` | End selected process: SIGTERM (graceful) |
-| `K` (capital) | Force kill selected process: SIGKILL |
-| `u` | Switch between user and system services |
-| `e` | Stop selected service |
-| `b` | Start selected service |
-| `y` / `n` | Confirm / cancel pending action |
-| `Space` | Pause/resume refresh |
-| `r` | Force refresh |
-| `?` | Help |
-| `q` | Quit |
-
-**Safety:** SIGTERM lets applications exit cleanly; SIGKILL does not. Unsaved application data can be lost. Terminating system processes may destabilize the session. Service actions invoke `systemctl --user` or `systemctl --system` with no password prompt, so operations may fail when the current account lacks authorization. Stopping network, display or other critical services can interrupt your session. There is **no enable/disable at boot** feature; start/stop affects current service operation only. The service list covers `systemd` units, not all possible init systems.
-
-## Command-line reporting
+If the GUI file is not executable, run:
 
 ```bash
-./build/sysprobe --help
-./build/sysprobe --json
-./build/sysprobe --processes
-./build/sysprobe --top 20
-./build/sysprobe --pid 1234
-./build/sysprobe --interval 500
-./build/sysprobe --version
+python3 gui/sysprobe_gui.py
 ```
 
-`--top` accepts 1–2048. CLI process lists default to resident-memory sorting and `cpu_ticks` in JSON is cumulative, **not** live CPU%. The interactive dashboard calculates sampled per-process CPU% across refreshes. First sample shows 0.0% until a second snapshot. CPU% can exceed 100 for multi-threaded processes (100% represents approximately one logical CPU).
+To install a **SysProbe launcher in the GNOME application menu** (this writes to `/usr/local`):
 
-## Source layout
+```bash
+sudo make install-desktop
+sysprobe-gui
+```
+
+Open GNOME Activities → search **SysProbe**. Uninstall with `sudo make uninstall-desktop` from the source directory.
+
+## Ubuntu / Debian
+
+```bash
+sudo apt update
+sudo apt install -y build-essential python3 python3-tk systemd unzip
+make
+make test
+python3 gui/sysprobe_gui.py
+```
+
+## Process controls and safety
+
+Select a process, then **End task** sends `SIGTERM` or **Force kill** sends `SIGKILL` after a confirmation dialog. SysProbe blocks signals to PID 1 and to itself and checks process start time again to reduce PID-reuse risk. It cannot prevent every possible race, so avoid terminating core desktop components. Unsaved work may be lost. SysProbe does not elevate privileges for process operations.
+
+The Services page uses `systemctl`, and system-level changes may fail unless permitted or authorized by your operating system. It protects several critical units from the Stop button, but this list is not exhaustive. System services should only be stopped when you understand their impact.
+
+## Project layout
 
 ```text
-src/main.c          CLI parsing
-src/collect.c       /proc, statvfs, process collection
-src/output.c        Text and JSON reporting
-src/tui.c           ANSI dashboard, process control, systemd services
-include/sysprobe.h  Shared types and interfaces
-tests/unit.c        Parsing unit tests
-tests/integration.py CLI checks
-tests/tui_smoke.py Pseudo-terminal smoke test
-.github/workflows/ci.yml
-Makefile
-LICENSE
+sysprobe-v3.1/
+├── src/                     # C monitoring engine and terminal UI
+├── include/                 # C header
+├── gui/sysprobe_gui.py      # Graphical desktop application
+├── assets/                  # Desktop launcher and SVG icon
+├── packaging/sysprobe-gui   # Launcher script
+├── tests/                   # Unit, integration and GUI smoke tests
+├── .github/workflows/ci.yml
+├── Makefile
+└── LICENSE
 ```
 
-## Development and testing
+## Testing
 
 ```bash
-make clean && make
-make test
-make sanitize  # creates instrumented build for manual checks
+make test              # C unit + CLI integration + terminal smoke tests
+make desktop-check     # Verify Python syntax
+make gui-test          # Requires xvfb-run; tests GUI in a virtual display
 ```
 
-## Known limitations
+On Fedora, install the virtual display test runner with `sudo dnf install -y xorg-x11-server-Xvfb` if needed.
 
-- The TUI shows the largest **2,048 processes by resident memory**; smaller processes may be omitted on systems with more processes. Linux process listings can change between samples.
-- CPU usage and network throughput are estimates based on time-separated samples; network totals include loopback and potentially multiple interfaces.
-- The process name is `/proc/PID/stat` `comm`, not the full command line.
-- The process identity guard reduces PID-reuse mistakes but is not atomic; `pidfd_send_signal` would be a stronger future improvement.
-- Service enumeration uses a fixed `systemctl` command, but depends on a running systemd user or system manager. Some services may require privileges or be unavailable.
-- No CPU-per-core panel, GPU statistics, process tree, mouse support, or full Windows Task Manager GUI in this version.
-- UTF-8 names are rendered conservatively in the terminal; very long lines can be clipped by the current layout.
+## Limitations
+
+- The UI uses Tkinter widgets, not native GTK4/libadwaita or real glass blur. It is a functional approximation of the visual mockup.
+- No per-process disk or network data; the Network view is system-wide.
+- CPU% for each process is calculated from changes in cumulative CPU ticks; the first sample shows 0% until a second sample arrives.
+- Network and CPU graphs show recent history gathered while the app has been running.
+- No app-grouping, per-core graphs, GPU telemetry, process tree, privilege escalation, or service enable/disable controls yet.
+- Service management is dependent on systemd, installed tools and user permissions.
+- All updates are driven by local measurements. The app does not send telemetry to a server.
+
+## Release notes: v3.1
+
+- Redesigned desktop UI with dark navy theme, teal accent and left navigation.
+- Added Storage, Network, Users and Logs pages.
+- Preserved C telemetry collector, terminal UI and process/service controls.
+- Improved process details and added process-safety confirmation.
 
 ## License
 
-MIT — see `LICENSE`. Independent project, not affiliated with Canonical, Fedora, or Microsoft.
+MIT — see [`LICENSE`](LICENSE).
+
+Independent open-source project; not affiliated with Fedora, Canonical, Red Hat, Microsoft or the btop project.

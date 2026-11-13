@@ -12,11 +12,11 @@ def run(*args, ok=True):
         assert p.returncode == 0, (args, p.stderr)
     return p
 
-assert "2.0.0" in run("--version").stdout
+assert "3.1.0" in run("--version").stdout
 assert "--json" in run("--help").stdout
 assert "--tui" in run("--help").stdout
 assert "interactive terminal" in run("--tui", ok=False).stderr
-assert "SysProbe v2.0" in run().stdout
+assert "SysProbe v3.1" in run().stdout
 snap = json.loads(run("--json", "--interval", "100").stdout)
 assert snap["system"]["os"] == "Linux"
 assert snap["memory"]["total_kib"] >= snap["memory"]["available_kib"]

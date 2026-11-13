@@ -24,3 +24,22 @@ clean:
 install: $(BUILD)/sysprobe
 	install -Dm755 $(BUILD)/sysprobe $(DESTDIR)$(PREFIX)/bin/sysprobe
 PREFIX ?= /usr/local
+
+# Desktop application (Fedora/Ubuntu): requires python3-tkinter at runtime.
+.PHONY: install-desktop uninstall-desktop desktop-check
+desktop-check:
+	python3 -m py_compile gui/sysprobe_gui.py
+install-desktop: all desktop-check
+	install -Dm755 build/sysprobe $(DESTDIR)/usr/local/bin/sysprobe
+	install -Dm755 gui/sysprobe_gui.py $(DESTDIR)/usr/local/share/sysprobe/gui/sysprobe_gui.py
+	install -Dm755 packaging/sysprobe-gui $(DESTDIR)/usr/local/bin/sysprobe-gui
+	install -Dm644 assets/io.github.aix567.SysProbe.desktop $(DESTDIR)/usr/local/share/applications/io.github.aix567.SysProbe.desktop
+	install -Dm644 assets/io.github.aix567.SysProbe.svg $(DESTDIR)/usr/local/share/icons/hicolor/scalable/apps/io.github.aix567.SysProbe.svg
+uninstall-desktop:
+	rm -f $(DESTDIR)/usr/local/bin/sysprobe-gui $(DESTDIR)/usr/local/bin/sysprobe
+	rm -f $(DESTDIR)/usr/local/share/sysprobe/gui/sysprobe_gui.py
+	rm -f $(DESTDIR)/usr/local/share/applications/io.github.aix567.SysProbe.desktop
+	rm -f $(DESTDIR)/usr/local/share/icons/hicolor/scalable/apps/io.github.aix567.SysProbe.svg
+.PHONY: gui-test
+gui-test: all desktop-check
+	xvfb-run -a python3 tests/gui_smoke.py

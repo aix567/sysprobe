@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SysProbe
+GenericName=Linux Task Manager
+Comment=Linux task manager with processes, performance, services, storage, networking, users and logs
+Exec=sysprobe-gui
+Icon=io.github.aix567.SysProbe
+Terminal=false
+Categories=System;Monitor;Utility;
+Keywords=process;task;monitor;systemd;linux;CPU;RAM;
+StartupNotify=true
