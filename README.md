@@ -1,4 +1,4 @@
-# SysProbe v2.0 — Linux Task Manager
+# SysProbe v2.0 
 
 A keyboard-driven **Linux terminal Task Manager**, built in C11 for Fedora and Ubuntu. Combines a compact btop-inspired performance dashboard with Windows Task Manager–style tabs for **Processes**, **Services**, and **Performance**.
 
