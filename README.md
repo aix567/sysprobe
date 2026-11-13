@@ -1,156 +1,104 @@
-# SysProbe
+# SysProbe v2.0 — Linux Task Manager
 
-**A lightweight Linux system information utility written in C.**
+A keyboard-driven **Linux terminal Task Manager**, built in C11 for Fedora and Ubuntu. Combines a compact btop-inspired performance dashboard with Windows Task Manager–style tabs for **Processes**, **Services**, and **Performance**.
 
-SysProbe is an open-source project focused on exploring Linux system programming, operating system interfaces, and low-level diagnostics.
-
-The project is designed to grow from a simple command-line system information tool into a modular Linux diagnostics utility.
-
-## Overview
-
-SysProbe retrieves system information using native Linux and POSIX interfaces. It prioritizes simplicity, readable code, error handling, and minimal dependencies.
-
-The project also serves as a practical learning environment for C programming, debugging, and Linux internals.
+> This is a native terminal application, not a Windows GUI clone. It runs under your ordinary user permissions and never runs `sudo` automatically.
 
 ## Features
 
-### Implemented — v0.1
+- Real-time total CPU utilization, history, RAM, swap, root filesystem usage, and network rates
+- Processes from `/proc`: PID, name, user, sampled per-process CPU %, resident RAM and state
+- Sort by CPU, RAM or PID and search process names
+- **End task** with `SIGTERM` or **force kill** with `SIGKILL` (both require explicit confirmation)
+- Checks PID plus process start time before sending a signal to avoid acting on a reused PID in ordinary cases
+- Browse `systemd` user or system services, filter names, and attempt to start/stop selected services with confirmation
+- Process details, pause, auto-refresh, keyboard help, terminal restoration on exit
+- Previous command-line diagnostic and JSON reporting options remain available
+- No external C libraries required; needs `systemctl` for the Services view
 
-- Kernel version detection
-- Operating system identification
-- System hostname retrieval
-- CPU architecture identification
-- System information through the `uname()` interface
-- Basic error handling
-- Lightweight command-line execution
-
-### Planned
-
-- CPU information and utilization monitoring
-- Memory statistics through `/proc/meminfo`
-- Process inspection through `/proc`
-- File descriptor inspection
-- JSON output
-- Command-line arguments such as `--help` and `--kernel-only`
-- Automated tests and continuous integration
-
-## Requirements
-
-- Linux operating system
-- GCC or Clang compiler
-- Standard C library
-- Git (optional)
-
-Developed primarily for Fedora Linux, with Ubuntu compatibility as a development goal.
-
-## Installation
-
-Clone the repository:
+## Install Fedora
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/sysprobe.git
-cd sysprobe
+sudo dnf install -y gcc make python3 git unzip
+make
+make test
+./build/sysprobe --tui
 ```
 
-Compile using GCC:
+For Ubuntu/Debian: `sudo apt install build-essential python3` then run the same `make` steps.
 
-```bash
-gcc -std=c11 -Wall -Wextra -Wpedantic -Werror -g -o sysprobe main.c
-```
+**Terminal size:** at least 78 x 24 (recommend 110 x 32 or larger). ANSI-capable terminal such as GNOME Console, kitty, Alacritty, or Konsole.
 
-Run:
+## Keyboard shortcuts
 
-```bash
-./sysprobe
-```
-
-Replace `YOUR_USERNAME` with your GitHub username after publishing the repository.
-
-## Example output
-
-Illustrative output (system details will vary):
-
-```text
-=== SysProbe v0.1 ===
-System:       Linux
-Node:         fedora
-Kernel:       6.x.x
-Architecture: x86_64
-```
-
-## Project Structure
-
-```text
-sysprobe/
-├── main.c
-├── README.md
-└── .gitignore
-```
-
-Additional source files, test suites, and build scripts will be introduced as the project expands.
-
-## Technical Details
-
-SysProbe currently uses the `uname()` function provided through `<sys/utsname.h>` to retrieve system information.
-
-The application checks return values and reports errors using `perror()`.
-
-**Current design principles:**
-
-- Prefer well-documented system interfaces
-- Check and handle errors
-- Avoid unnecessary runtime dependencies
-- Keep modules small and maintainable
-- Use compiler warnings to improve code quality
-- Validate behavior with reproducible tests
-
-## Development Roadmap
-
-| Version | Planned milestone |
+| Key | Tab / action |
 |---|---|
-| v0.1 | Basic system information |
-| v0.2 | CPU and memory diagnostics |
-| v0.3 | Process inspection |
-| v0.4 | File descriptor analysis |
-| v0.5 | JSON output and CLI arguments |
-| v0.6 | Automated testing and CI |
-| v1.0 | Stable Linux diagnostic utility |
+| `1` / `2` / `3` | Processes / Services / Performance |
+| `j` / `k`, up/down | Navigate list |
+| `/` | Filter by process or service name (`Enter` accepts) |
+| `s` | Cycle process sort: live CPU%, RAM, PID |
+| `d` | Process details popup |
+| `t` | End selected process: SIGTERM (graceful) |
+| `K` (capital) | Force kill selected process: SIGKILL |
+| `u` | Switch between user and system services |
+| `e` | Stop selected service |
+| `b` | Start selected service |
+| `y` / `n` | Confirm / cancel pending action |
+| `Space` | Pause/resume refresh |
+| `r` | Force refresh |
+| `?` | Help |
+| `q` | Quit |
 
-These milestones are development targets and may change.
+**Safety:** SIGTERM lets applications exit cleanly; SIGKILL does not. Unsaved application data can be lost. Terminating system processes may destabilize the session. Service actions invoke `systemctl --user` or `systemctl --system` with no password prompt, so operations may fail when the current account lacks authorization. Stopping network, display or other critical services can interrupt your session. There is **no enable/disable at boot** feature; start/stop affects current service operation only. The service list covers `systemd` units, not all possible init systems.
 
-## Build Quality
-
-Recommended development compilation:
+## Command-line reporting
 
 ```bash
-gcc -std=c11 -Wall -Wextra -Wpedantic -Werror \
-    -g -fsanitize=address,undefined \
-    -o sysprobe main.c
+./build/sysprobe --help
+./build/sysprobe --json
+./build/sysprobe --processes
+./build/sysprobe --top 20
+./build/sysprobe --pid 1234
+./build/sysprobe --interval 500
+./build/sysprobe --version
 ```
 
-This enables common compiler warnings and AddressSanitizer/UndefinedBehaviorSanitizer checks on supported toolchains.
+`--top` accepts 1–2048. CLI process lists default to resident-memory sorting and `cpu_ticks` in JSON is cumulative, **not** live CPU%. The interactive dashboard calculates sampled per-process CPU% across refreshes. First sample shows 0.0% until a second snapshot. CPU% can exceed 100 for multi-threaded processes (100% represents approximately one logical CPU).
 
-## Contributing
+## Source layout
 
-Contributions, bug reports, and suggestions are welcome.
+```text
+src/main.c          CLI parsing
+src/collect.c       /proc, statvfs, process collection
+src/output.c        Text and JSON reporting
+src/tui.c           ANSI dashboard, process control, systemd services
+include/sysprobe.h  Shared types and interfaces
+tests/unit.c        Parsing unit tests
+tests/integration.py CLI checks
+tests/tui_smoke.py Pseudo-terminal smoke test
+.github/workflows/ci.yml
+Makefile
+LICENSE
+```
 
-For changes:
+## Development and testing
 
-1. Open an issue describing the proposed improvement.
-2. Create a separate Git branch.
-3. Implement and test the change.
-4. Submit a pull request describing your changes.
+```bash
+make clean && make
+make test
+make sanitize  # creates instrumented build for manual checks
+```
 
-Please keep contributions focused, readable, and documented.
+## Known limitations
 
-## Disclaimer
-
-SysProbe is an independent educational open-source project. It is not affiliated with, endorsed by, or maintained by Canonical, Red Hat, Fedora, or the Linux Foundation.
-
-## Author
-
-Developed by an aspiring Linux systems engineer, with a focus on C programming, Linux internals, and open-source development.
+- The TUI shows the largest **2,048 processes by resident memory**; smaller processes may be omitted on systems with more processes. Linux process listings can change between samples.
+- CPU usage and network throughput are estimates based on time-separated samples; network totals include loopback and potentially multiple interfaces.
+- The process name is `/proc/PID/stat` `comm`, not the full command line.
+- The process identity guard reduces PID-reuse mistakes but is not atomic; `pidfd_send_signal` would be a stronger future improvement.
+- Service enumeration uses a fixed `systemctl` command, but depends on a running systemd user or system manager. Some services may require privileges or be unavailable.
+- No CPU-per-core panel, GPU statistics, process tree, mouse support, or full Windows Task Manager GUI in this version.
+- UTF-8 names are rendered conservatively in the terminal; very long lines can be clipped by the current layout.
 
 ## License
 
-A license has not yet been selected. Add an appropriate `LICENSE` file before distributing the project under an open-source license.
+MIT — see `LICENSE`. Independent project, not affiliated with Canonical, Fedora, or Microsoft.

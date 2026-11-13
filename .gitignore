@@ -1,0 +1,7 @@
+/build/
+*.o
+*.swp
+.DS_Store
+
+/sysprobe
+/build/
